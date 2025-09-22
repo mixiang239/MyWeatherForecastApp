@@ -50,7 +50,6 @@ public class SearchCity extends AppCompatActivity {
 
     }
     private void EditTextListener() {
-
         binding.searchCityListEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
