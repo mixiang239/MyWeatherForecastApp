@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:cardCornerRadius="@dimen/dimen_8dp"
+    app:cardElevation="4dp"
+    app:cardUseCompatPadding="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginStart="@dimen/dimen_8dp"
+        android:layout_marginEnd="@dimen/dimen_8dp"
+        android:layout_marginTop="@dimen/dimen_8dp"
+        android:layout_marginBottom="@dimen/dimen_8dp"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            >
+
+            <ImageView
+                android:id="@+id/carousel_icon"
+                android:layout_width="@dimen/dimen_16dp"
+                android:layout_height="@dimen/dimen_16dp"
+                android:src="@drawable/clothes"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="@dimen/dimen_8dp"
+                />
+            <TextView
+                android:id="@+id/carousel_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="宜穿薄外套"
+                android:textSize="18sp"
+                android:textColor="@color/black"
+                android:layout_marginStart="@dimen/dimen_8dp"
+                />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/carousel_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="建议着长袖T恤、衬衫加单裤等服装。年老体弱者宜着针织长袖衬衫、马甲和长裤。"
+            android:textSize="13sp"
+            android:textColor="@color/black"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="@dimen/dimen_8dp"
+            android:layout_marginBottom="@dimen/dimen_8dp"
+            />
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

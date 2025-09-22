@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="blue">#2196F3</color>
+
+    <!-- 按钮的粉红色 -->
+    <color name="button_pink">#FF4081</color> <!-- 明亮的粉红色 -->
+    <!-- 按下时更深的粉红色 -->
+    <color name="button_pink_pressed">#EC407A</color>
+    <!-- 加号的白色 -->
+    <color name="icon_white">#FFFFFFFF</color>
+    <!-- 可选的浅灰色背景，如果您需要 -->
+    <color name="background_light_gray">#F5F5F5</color>
+
+    <color name="gray">#D3D3D3</color>
+</resources>

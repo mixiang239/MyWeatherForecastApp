@@ -1,0 +1,83 @@
+plugins {
+    alias(libs.plugins.android.application)
+}
+
+android {
+    namespace 'com.example.weatherforecast'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.example.weatherforecast"
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    buildFeatures {
+        viewBinding true    //开启ViewBinding
+    }
+
+    //加载so文件
+    sourceSets{
+        main{
+            jniLibs.srcDir 'libs'
+            jni.srcDirs = []    //disable automatic ndk-build
+        }
+    }
+
+}
+
+dependencies {
+    // 批量添加所有JAR
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.activity
+    implementation libs.constraintlayout
+    testImplementation libs.junit
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
+    //OKHttp
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'net.i2p.crypto:eddsa:0.3.0'
+
+    // Retrofit网络请求库
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'com.squareup.retrofit2:adapter-rxjava3:2.9.0'
+
+    // Android Jetpack组件
+    implementation 'androidx.lifecycle:lifecycle-livedata:2.5.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel:2.5.1'
+
+    // ViewPager2
+    implementation "androidx.viewpager2:viewpager2:1.0.0"
+
+    // MaterialButton
+    implementation 'com.google.android.material:material:1.12.0'
+
+    // Room 运行时库
+    implementation "androidx.room:room-runtime:2.6.1"
+
+    // Room 注解处理器（编译时生成代码）
+    annotationProcessor "androidx.room:room-compiler:2.6.1"
+
+    // Room类型转换器
+    implementation 'com.google.code.gson:gson:2.8.9'
+
+}

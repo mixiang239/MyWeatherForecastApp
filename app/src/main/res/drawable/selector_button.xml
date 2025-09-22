@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 按下状态 -->
+    <item android:state_pressed="true">
+        <layer-list>
+            <!-- 第一层：按下时的颜色圆形 -->
+            <item>
+                <shape android:shape="oval">
+                    <solid android:color="@color/button_pink_pressed" />
+                    <size
+                        android:width="64dp"
+                        android:height="64dp" />
+                </shape>
+            </item>
+            <!-- 第二层：叠加加号图标，居中 -->
+            <item
+                android:drawable="@drawable/ic_add"
+                android:gravity="center" />
+        </layer-list>
+    </item>
+
+    <!-- 默认（未按下）状态 -->
+    <item>
+        <layer-list>
+            <!-- 第一层：默认的粉红色圆形 -->
+            <item>
+                <shape android:shape="oval">
+                    <solid android:color="@color/button_pink" />
+                    <size
+                        android:width="64dp"
+                        android:height="64dp" />
+                </shape>
+            </item>
+            <!-- 第二层：叠加加号图标，居中 -->
+            <item
+                android:drawable="@drawable/ic_add"
+                android:gravity="center" />
+        </layer-list>
+    </item>
+</selector>

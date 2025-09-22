@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>、
+    <style name="materialButtonStyle">
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+
+        <!-- 添加图标着色解决 -->
+        <item name="iconTint">@color/black</item> <!-- 指定颜色 -->
+        <item name="iconTintMode">src_in</item>
+        <!-- 改用半透明或移除背景 -->
+        <item name="backgroundTint">@android:color/transparent</item>
+        <!-- 添加这些关键属性 -->
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">0dp</item>
+        <item name="iconSize">@dimen/icon_size_default</item>
+    </style>
+
+</resources>
