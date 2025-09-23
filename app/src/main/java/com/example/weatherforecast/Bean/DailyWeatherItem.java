@@ -1,6 +1,8 @@
 package com.example.weatherforecast.Bean;
 
-public class DailyWeatherItem {
+import java.io.Serializable;
+
+public class DailyWeatherItem implements Serializable {
     // 日期
     String date;
     // 图片资源Id

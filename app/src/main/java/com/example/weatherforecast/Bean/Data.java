@@ -1,8 +1,9 @@
 package com.example.weatherforecast.Bean;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class Data {
+public class Data implements Serializable {
     private String RealTimeTem;
     private String RealTimeText;
     private List<HourlyWeatherItem> hourlyWeatherItemList;
@@ -195,7 +196,7 @@ public class Data {
         this.sportAdvice = sportAdvice;
     }
 
-    public static class AirQualityBean{
+    public static class AirQualityBean implements Serializable {
         private String aqiDisplay;
         private String category;
         private String advice;
@@ -203,6 +204,8 @@ public class Data {
         private int green;
         private int blue;
         private int alpha;
+
+        public AirQualityBean() {}
 
         public String getAdvice() {
             return advice;
@@ -273,7 +276,7 @@ public class Data {
                     '}';
         }
     }
-    public static class LivingIndexBean{
+    public static class LivingIndexBean implements Serializable {
         private String type;
         private String level;
 
@@ -333,7 +336,7 @@ public class Data {
         }
     }
 
-    public static class WarningInfoBean {
+    public static class WarningInfoBean implements Serializable {
         private String title;
         private String WarningInfoText;
 

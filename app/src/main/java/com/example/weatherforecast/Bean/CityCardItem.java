@@ -1,5 +1,7 @@
 package com.example.weatherforecast.Bean;
 
+import java.io.Serializable;
+
 public class CityCardItem {
     private String name;
     private String temp;

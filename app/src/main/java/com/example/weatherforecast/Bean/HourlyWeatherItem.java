@@ -1,6 +1,8 @@
 package com.example.weatherforecast.Bean;
 
-public class HourlyWeatherItem {
+import java.io.Serializable;
+
+public class HourlyWeatherItem implements Serializable {
     String time;
     int ImageId;
     String tem;

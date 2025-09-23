@@ -1,6 +1,8 @@
 package com.example.weatherforecast.Bean;
 
-public class CarouselItem {
+import java.io.Serializable;
+
+public class CarouselItem implements Serializable {
     public static final int WARNING_TYPE = 0;
     public static final int PRECIPITATION_TYPE = 1;
     public static final int ADVICE_TYPE = 2;
