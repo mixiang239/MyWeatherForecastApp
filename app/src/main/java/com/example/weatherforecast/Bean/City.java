@@ -28,8 +28,7 @@ public class City {
     @TypeConverters(DataTypeConverter.class)
     private Data data;
 
-    public City(int id, String name, String temperature, String airQuality, String weather, Data data) {
-        this.id = id;
+    public City(String name, String temperature, String airQuality, String weather, Data data) {
         this.name = name;
         this.temperature = temperature;
         this.airQuality = airQuality;

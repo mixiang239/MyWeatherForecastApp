@@ -6,16 +6,26 @@ public class CityInfo {
     private String adm1;
     private String adm2;
     private String Country;
+    /**
+     * 纬度信息
+     */
+    private String latitude;
+    /**
+     * 经度信息
+     */
+    private String longitude;
 
     public CityInfo() {
     }
 
-    public CityInfo(String locationID, String name, String adm1, String adm2, String country) {
+    public CityInfo(String locationID, String name, String adm1, String adm2, String country, String latitude, String longitude) {
         LocationID = locationID;
         this.name = name;
         this.adm1 = adm1;
         this.adm2 = adm2;
         Country = country;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public String getLocationID() {
@@ -56,5 +66,21 @@ public class CityInfo {
 
     public void setCountry(String country) {
         Country = country;
+    }
+
+    public String getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(String latitude) {
+        this.latitude = latitude;
+    }
+
+    public String getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(String longitude) {
+        this.longitude = longitude;
     }
 }

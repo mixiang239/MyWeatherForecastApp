@@ -86,4 +86,9 @@ dependencies {
     // Room类型转换器
     implementation 'com.google.code.gson:gson:2.8.9'
 
+    // ViewPager2核心库
+    implementation "androidx.viewpager2:viewpager2:1.0.0"
+
+    // Material Design组件(TabLayout)
+    implementation "com.google.android.material:material:1.6.0"
 }

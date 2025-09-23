@@ -6,6 +6,9 @@ public class CityCardItem {
     private String airQuality;
     private String weather;
 
+    public CityCardItem() {
+    }
+
     public CityCardItem(String name, String temp, String airQuality, String weather) {
         this.name = name;
         this.temp = temp;

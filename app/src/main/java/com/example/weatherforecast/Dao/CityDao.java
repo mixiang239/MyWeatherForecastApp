@@ -7,6 +7,7 @@ import androidx.room.Query;
 import androidx.room.Update;
 
 import com.example.weatherforecast.Bean.City;
+import com.example.weatherforecast.Bean.Data;
 
 import java.util.List;
 
@@ -19,12 +20,12 @@ public interface CityDao {
 
     // 更新城市（通过对象）
     @Update
-    void updateCity(City city);
+    int updateCity(City city);
 
     // 更新城市（通过名称）
     @Query("UPDATE `city_room` SET city_temperature = :temperature, " +
-            "city_airQuality = :airQuality, city_weather = :weather WHERE city_name = :name")
-    void updateCity(String name, String temperature, String airQuality, String weather);
+            "city_airQuality = :airQuality, city_weather = :weather, city_data = :data WHERE city_name = :name")
+    int updateCity(String name, String temperature, String airQuality, String weather, Data data);
 
     // 查询所有城市
     @Query("SELECT * FROM `city_room`")
@@ -41,4 +42,8 @@ public interface CityDao {
     // 删除城市（通过名称）
     @Query("DELETE FROM `city_room` WHERE city_name = :name")
     void deleteCityByName(String name);
+
+    // 删除所有城市
+    @Query("DELETE FROM `city_room`")
+    void deleteAllCity();
 }

@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.weatherforecast.Adapter.CityListAdapter;
 import com.example.weatherforecast.Bean.CityInfo;
 import com.example.weatherforecast.Model.weatherModel;
+import com.example.weatherforecast.ViewModel.searchCityWeatherViewModel;
 import com.example.weatherforecast.ViewModel.weatherViewModel;
 import com.example.weatherforecast.databinding.CityShowBinding;
 
@@ -24,6 +26,7 @@ import java.util.List;
 public class SearchCity extends AppCompatActivity {
     private CityShowBinding binding;
     private weatherViewModel weatherViewModel;
+    private searchCityWeatherViewModel searchCityWeatherViewModel;
     private List<CityInfo> cityList;
     private static final String API_HOST = "kh487rae6k.re.qweatherapi.com";     // 实际API Host
     private static final String API_KEY = "8dc3ea33ad3b43dcb46bcc08b0bb8337";       // 实际API Key
@@ -41,6 +44,7 @@ public class SearchCity extends AppCompatActivity {
     private void Init() {
         // 初始化ViewModel
         weatherViewModel = new ViewModelProvider(this).get(weatherViewModel.class);
+        searchCityWeatherViewModel = new ViewModelProvider(this).get(searchCityWeatherViewModel.class);
         // 1. 请求焦点
         binding.searchCityListEditText.requestFocus();
 
@@ -94,9 +98,14 @@ public class SearchCity extends AppCompatActivity {
                 adapter.setOnItemClickListener(position -> {
                     // 处理点击事件
                     String LocationId = cityList.get(position).getLocationID();
+                    String Latitude = cityList.get(position).getLatitude();
+                    String Longitude = cityList.get(position).getLongitude();
                     weatherModel.NetworkRequestAPI searchCity = weatherModel.RetrofitClient.getClient("https://" + API_HOST)
                             .create(weatherModel.NetworkRequestAPI.class);
 
+                    searchCityWeatherViewModel.getData(searchCity, LocationId, Double.parseDouble(Latitude), Double.parseDouble(Longitude), cityList.get(position));
+                    Toast.makeText(this, "成功添加到数据库！", Toast.LENGTH_SHORT).show();
+                    finish();
                 });
             }
         });
