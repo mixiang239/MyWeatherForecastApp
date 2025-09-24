@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.weatherforecast.Bean.CityCardItem;
+import com.example.weatherforecast.Bean.DailyWeatherItem;
 import com.example.weatherforecast.R;
 
 import java.util.List;
@@ -37,6 +38,16 @@ public class CityCardAdapter extends RecyclerView.Adapter<CityCardAdapter.ViewHo
         holder.weather.setText(item.getWeather());
     }
 
+    public void updateData(List<CityCardItem> data) {
+        this.cityCardItemList.clear();
+        this.cityCardItemList.addAll(data);
+        notifyDataSetChanged();
+
+        // 或者更好的方式：使用DiffUtil进行高效更新
+        // DiffUtil.DiffResult result = DiffUtil.calculateDiff(new MyDiffCallback(this.dataList, newData));
+        // this.dataList = newData;
+        // result.dispatchUpdatesTo(this);
+    }
     @Override
     public int getItemCount() {
         return cityCardItemList.size();

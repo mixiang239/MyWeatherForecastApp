@@ -7,8 +7,10 @@ import androidx.room.TypeConverters;
 
 import com.example.weatherforecast.Converter.DataTypeConverter;
 
+import java.io.Serializable;
+
 @Entity(tableName = "city_room")
-public class City {
+public class City implements Serializable {
     @PrimaryKey(autoGenerate = true)
     private int id;
 
@@ -27,7 +29,8 @@ public class City {
     @ColumnInfo(name = "city_data")
     @TypeConverters(DataTypeConverter.class)
     private Data data;
-
+    @ColumnInfo(name = "city_location_id")
+    private String locationId;
     public City(String name, String temperature, String airQuality, String weather, Data data) {
         this.name = name;
         this.temperature = temperature;
@@ -82,5 +85,25 @@ public class City {
 
     public void setData(Data data) {
         this.data = data;
+    }
+
+    public String getLocationId() {
+        return locationId;
+    }
+
+    public void setLocationId(String locationId) {
+        this.locationId = locationId;
+    }
+
+    @Override
+    public String toString() {
+        return "City{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", temperature='" + temperature + '\'' +
+                ", airQuality='" + airQuality + '\'' +
+                ", weather='" + weather + '\'' +
+                ", locationId='" + locationId + '\'' +
+                '}';
     }
 }

@@ -17,12 +17,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CarouselAdapter extends RecyclerView.Adapter<CarouselAdapter.ViewHolder> {
-    private List<CarouselItem> carouselItemList = new ArrayList<>();
+    private List<CarouselItem> carouselItemList;
     private static final String TAG = "CarouselAdapter";
 
     public CarouselAdapter(List<CarouselItem> carouselItemList) {
         this.carouselItemList = carouselItemList;
     }
+
+
 
     @NonNull
     @Override
@@ -34,16 +36,6 @@ public class CarouselAdapter extends RecyclerView.Adapter<CarouselAdapter.ViewHo
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-//        if (carouselItemList == null || carouselItemList.isEmpty()) {
-//                return;
-//            }
-//        // 使用取模运算实现无限循环
-//        int actualPosition = position % carouselItemList.size();
-//        CarouselItem item = carouselItemList.get(actualPosition);
-//
-//        holder.icon.setImageResource(item.getIconId());
-//        holder.title.setText(item.getTitle());
-//        holder.details.setText(item.getDetails());
 
         try {
             if (carouselItemList == null || carouselItemList.isEmpty()) {
@@ -83,6 +75,17 @@ public class CarouselAdapter extends RecyclerView.Adapter<CarouselAdapter.ViewHo
 
     }
 
+    // 优化数据更新方法
+    public void updateData(List<CarouselItem> newItems) {
+        if (newItems == null) return;
+
+        // 避免不必要的更新
+        if (carouselItemList.equals(newItems)) return;
+
+        carouselItemList.clear();
+        carouselItemList.addAll(newItems);
+        notifyDataSetChanged();
+    }
     @Override
     public int getItemCount() {
         return Integer.MAX_VALUE;

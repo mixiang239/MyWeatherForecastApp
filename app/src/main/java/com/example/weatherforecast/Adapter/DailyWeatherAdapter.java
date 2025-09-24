@@ -37,6 +37,17 @@ public class DailyWeatherAdapter extends RecyclerView.Adapter<DailyWeatherAdapte
         holder.MaxAndMinText.setText(currentWea.getMinAndMaxTem());
     }
 
+    public void updateData(List<DailyWeatherItem> data) {
+        this.dailyWeatherList.clear();
+        this.dailyWeatherList.addAll(data);
+        notifyDataSetChanged();
+
+        // 或者更好的方式：使用DiffUtil进行高效更新
+        // DiffUtil.DiffResult result = DiffUtil.calculateDiff(new MyDiffCallback(this.dataList, newData));
+        // this.dataList = newData;
+        // result.dispatchUpdatesTo(this);
+    }
+
     @Override
     public int getItemCount() {
         return dailyWeatherList == null ? 0 : dailyWeatherList.size();

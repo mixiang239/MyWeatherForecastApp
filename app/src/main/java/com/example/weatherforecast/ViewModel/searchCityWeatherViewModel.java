@@ -64,15 +64,21 @@ public class searchCityWeatherViewModel extends ViewModel {
     private final MutableLiveData<List<City>> roomCityList = new MutableLiveData<>();
     public LiveData<List<City>> getRoomCityList() { return roomCityList; }
 
-    public void getData(weatherModel.NetworkRequestAPI APIService, String locationId, double latitude, double longitude, CityInfo cityInfo) {
+    public void getData(weatherModel.NetworkRequestAPI APIService, String locationId, double latitude, double longitude, String cityInfo) {
         hourlyWeatherItemList.clear();
         dailyWeatherItemList.clear();
         carouselItemList.clear();
         completedRequests.set(0); // 重置计数器
 
+        data.setLocationId(locationId);
+        data.setLatitude(latitude);
+        data.setLongitude(longitude);
+        data.setCityName(cityInfo);
+
         // 初始化数据库
         cityDataBase = Room.databaseBuilder(WeatherApp.getContext(), CityDataBase.class, "city-database.db")
                 .addMigrations(CityDataBase.MIGRATION_1_2)
+                .addMigrations(CityDataBase.MIGRATION_2_3)
                 .build();
 
         //Log.d(TAG, "getData: " + longitude +","+ latitude);
@@ -94,20 +100,20 @@ public class searchCityWeatherViewModel extends ViewModel {
                     data.setVis(now.getVis());
                     data.setPrecip(now.getPrecip());
                     //weatherData.setValue(data);
-                    checkAllRequestsCompleted(cityInfo);
+                    checkAllRequestsCompleted(cityInfo, locationId);
                     Log.d(TAG, "getRealTimeWeather: 请求成功 " + response.body().toString());
                     //Log.d(TAG, "onResponse: data具体值：" + data.toString());
                 } else {
                     //errorMessage.setValue("请求失败，状态码: " + response.code());
                     Log.d(TAG, "getRealTimeWeather: 请求失败，状态码:" + response.code());
                 }
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
             }
 
             @Override
             public void onFailure(Call<RealTimeWeatherResponse> call, Throwable t) {
                 //errorMessage.setValue("网络请求失败: " + t.getMessage());
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
                 Log.d(TAG, "getRealTimeWeather: 请求失败，状态码:" + t.getMessage());
             }
         });
@@ -133,7 +139,7 @@ public class searchCityWeatherViewModel extends ViewModel {
                     //errorMessage.setValue("请求失败，状态码: " + response.code());
                     Log.d(TAG, "getHourlyWeather: 请求失败，状态码:" + response.code());
                 }
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
             }
 
             @Override
@@ -141,7 +147,7 @@ public class searchCityWeatherViewModel extends ViewModel {
                 //errorMessage.setValue("网络请求失败: " + t.getMessage());
                 Log.d(TAG, "getHourlyWeather: 请求失败，状态码:" + t.getMessage());
                 //Log.d(TAG, "getHourlyWeather: 请求失败");
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
             }
         });
 
@@ -167,7 +173,7 @@ public class searchCityWeatherViewModel extends ViewModel {
                     //errorMessage.setValue("请求失败，状态码: " + response.code());
                     Log.d(TAG, "getDailyWeather: 请求失败，状态码:" + response.code());
                 }
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
             }
 
             @Override
@@ -175,7 +181,7 @@ public class searchCityWeatherViewModel extends ViewModel {
                 //errorMessage.setValue("网络请求失败: " + t.getMessage());
                 //Log.d(TAG, "getDailyWeather: 请求失败");
                 Log.d(TAG, "getDailyWeather: 请求失败，状态码:" + t.getMessage());
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
             }
         });
 
@@ -200,7 +206,7 @@ public class searchCityWeatherViewModel extends ViewModel {
                     CarouselItem item = new CarouselItem();
                     item.setItemType(CarouselItem.AIR_TYPE);
                     item.setTitle("空气" + index.getCategory());
-                    item.setDetails(index.getHealth().getAdvice().getGeneralPopulation() + index.getHealth().getAdvice().getSensitivePopulation());
+                    item.setDetails(index.getHealth().getAdvice().getGeneralPopulation());
                     synchronized (lock) {
                         carouselItemList.add(item);
                     }
@@ -210,12 +216,12 @@ public class searchCityWeatherViewModel extends ViewModel {
                     //weatherData.setValue(data);
                     Log.d(TAG, "onResponse: 请求空气质量数据成功：" + data.toString());
                 }
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
             }
 
             @Override
             public void onFailure(Call<AirQualityResponse> call, Throwable t) {
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
                 Log.d(TAG, "onFailure: 空气质量数据请求数据失败！状态码:" + t.getMessage());
             }
         });
@@ -259,12 +265,12 @@ public class searchCityWeatherViewModel extends ViewModel {
                     //weatherData.setValue(data);
                     Log.d(TAG, "onResponse: 请求天气指数成功：" + weatherResponse.toString());
                 }
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
             }
 
             @Override
             public void onFailure(Call<LivingIndexResponse> call, Throwable t) {
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
                 Log.d(TAG, "onFailure: 天气指数请求数据失败！状态码:" + t.getMessage());
             }
         });
@@ -297,14 +303,14 @@ public class searchCityWeatherViewModel extends ViewModel {
                         //weatherData.setValue(data);
                     }
                 }
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
                 Log.d(TAG, "onResponse: 请求预警信息成功：" + data.getWarningInfoBean());
             }
 
             @Override
             public void onFailure(Call<WarningInfoResponse> call, Throwable t) {
                 Log.d(TAG, "onFailure: 预警信息请求数据失败！状态码:" + t.getMessage());
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
 
             }
         });
@@ -327,21 +333,21 @@ public class searchCityWeatherViewModel extends ViewModel {
                     //weatherData.setValue(data);
                 }
 
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
                 Log.d(TAG, "onResponse: 请求分钟级降水信息成功：" + data.getMinutelyPrecip());
             }
 
             @Override
             public void onFailure(Call<MinutelyPrecipResponse> call, Throwable t) {
                 Log.d(TAG, "onFailure: 分钟级降水请求数据失败！状态码:" + t.getMessage());
-                checkAllRequestsCompleted(cityInfo);
+                checkAllRequestsCompleted(cityInfo, locationId);
 
             }
         });
     }
 
     // 检查所有请求是否已完成
-    private void checkAllRequestsCompleted(CityInfo cityInfo) {
+    private void checkAllRequestsCompleted(String cityInfo, String LocationId) {
         if (completedRequests.incrementAndGet() == TOTAL_REQUESTS) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.execute(new Runnable() {
@@ -350,10 +356,10 @@ public class searchCityWeatherViewModel extends ViewModel {
                 public void run() {
                     //cityDataBase.cityDao().deleteAllCity();
                     // 所有请求完成，更新数据库
-                    City city = new City(cityInfo.getName(), data.getRealTimeTem(), "空气" +
+                    City city = new City(cityInfo, data.getRealTimeTem(), "空气" +
                             data.getAirQuality().getCategory() + " " + data.getAirQuality().getAqiDisplay(), data.getRealTimeText(), data);
-                    if (cityDataBase.cityDao().updateCity(cityInfo.getName(), data.getRealTimeTem(), "空气" +
-                            data.getAirQuality().getCategory() + " " + data.getAirQuality().getAqiDisplay(), data.getRealTimeText(), data) != 0){
+                    if (cityDataBase.cityDao().updateCity(cityInfo, data.getRealTimeTem(), "空气" +
+                            data.getAirQuality().getCategory() + " " + data.getAirQuality().getAqiDisplay(), data.getRealTimeText(), data, LocationId) != 0){
                         Log.d(TAG, "run: 该城市已经添加，更新天气数据成功！");
                     } else {
                         cityDataBase.cityDao().insertCity(city);

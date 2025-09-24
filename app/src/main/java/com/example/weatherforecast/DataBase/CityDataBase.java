@@ -10,7 +10,7 @@ import com.example.weatherforecast.Bean.City;
 import com.example.weatherforecast.Converter.DataTypeConverter;
 import com.example.weatherforecast.Dao.CityDao;
 
-@Database(entities = {City.class}, version = 2)
+@Database(entities = {City.class}, version = 3)
 @TypeConverters({DataTypeConverter.class})
 public abstract class CityDataBase extends RoomDatabase {
     public abstract CityDao cityDao();
@@ -21,6 +21,15 @@ public abstract class CityDataBase extends RoomDatabase {
         public void migrate(SupportSQLiteDatabase database) {
             // 添加新列
             database.execSQL("ALTER TABLE city_room ADD COLUMN city_data TEXT");
+        }
+    };
+
+    // 数据库迁移 - 从版本2到3（添加locationId列）
+    public static final Migration MIGRATION_2_3 = new Migration(2, 3) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            // 添加新列
+            database.execSQL("ALTER TABLE city_room ADD COLUMN city_location_id TEXT");
         }
     };
 }

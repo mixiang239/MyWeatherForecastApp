@@ -1,6 +1,7 @@
 package com.example.weatherforecast.View;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
@@ -103,9 +104,15 @@ public class SearchCity extends AppCompatActivity {
                     weatherModel.NetworkRequestAPI searchCity = weatherModel.RetrofitClient.getClient("https://" + API_HOST)
                             .create(weatherModel.NetworkRequestAPI.class);
 
-                    searchCityWeatherViewModel.getData(searchCity, LocationId, Double.parseDouble(Latitude), Double.parseDouble(Longitude), cityList.get(position));
-                    Toast.makeText(this, "成功添加到数据库！", Toast.LENGTH_SHORT).show();
-                    finish();
+                    searchCityWeatherViewModel.getData(searchCity, LocationId, Double.parseDouble(Latitude), Double.parseDouble(Longitude), cityList.get(position).getName());
+
+                    // 添加成功后，直接启动MainActivity并传递数据
+                    Intent mainIntent = new Intent(SearchCity.this, MainActivity.class);
+                    mainIntent.putExtra("city_added", true);
+                    mainIntent.putExtra("city_name", cityList.get(position).getName());
+                    startActivity(mainIntent);
+                    finish(); // 结束当前活动
+
                 });
             }
         });

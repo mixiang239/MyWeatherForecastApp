@@ -41,6 +41,20 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             />
+
+        <TextView
+            android:id="@+id/delete_all_cities"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="删除所有"
+            android:textSize="16sp"
+            android:gravity="center"
+            app:layout_constraintHorizontal_bias="0.93"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -78,12 +92,110 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/city_title_layout" />
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="当前城市"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:layout_marginTop="@dimen/dimen_10dp"
+                />
+
+            <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                app:cardCornerRadius="@dimen/dimen_8dp"
+                app:cardElevation="4dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                app:cardUseCompatPadding="true"
+                >
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/blue">
+
+                    <TextView
+                        android:id="@+id/city_item_name_cur"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="灞桥区"
+                        android:textColor="@color/white"
+                        android:textSize="24sp"
+                        app:layout_constraintHorizontal_bias="0.10"
+                        app:layout_constraintVertical_bias="0.20"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/city_item_temperature_cur"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="17°"
+                        android:textSize="18sp"
+                        android:textColor="@color/white"
+                        app:layout_constraintHorizontal_bias="0.9"
+                        app:layout_constraintVertical_bias="0.3"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        />
+
+                    <TextView
+                        android:id="@+id/city_item_air_quality_cur"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="空气优  45"
+                        android:textSize="14sp"
+                        android:textColor="@color/gray"
+                        app:layout_constraintHorizontal_bias="0.10"
+                        app:layout_constraintVertical_bias="0.8"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        />
+
+                    <TextView
+                        android:id="@+id/city_item_weather_cur"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="阴"
+                        android:gravity="center"
+                        android:textSize="14sp"
+                        android:textColor="@color/white"
+                        app:layout_constraintHorizontal_bias="0.885"
+                        app:layout_constraintVertical_bias="0.8"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="已添加城市"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:layout_marginTop="@dimen/dimen_10dp"
+                />
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/city_card_recyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:nestedScrollingEnabled="false"
-                android:layout_marginTop="@dimen/dimen_16dp"
+                android:layout_marginTop="@dimen/dimen_0dp"
                 app:barrierMargin="@dimen/dimen_5dp"
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"

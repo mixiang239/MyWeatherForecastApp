@@ -152,7 +152,7 @@ public class weatherViewModel extends ViewModel {
                     }
                     Log.d(TAG, "getData: 请求成功 当前城市Id：" + LocationId);
                     Log.d(TAG, "getData: 请求成功 城市列表：" + cityList.toString());
-                    getData(searchCity, LocationId, latitude, longitude);
+                    getData(searchCity, LocationId, latitude, longitude, locationName);
                 } else {
                     //errorMessage.setValue("请求失败，状态码: " + response.code());
                     Log.d(TAG, "searchCity: 请求失败，状态码:" + response.code());
@@ -167,12 +167,16 @@ public class weatherViewModel extends ViewModel {
         });
     }
     // 获取数据
-    public void getData(NetworkRequestAPI APIService, String locationId, double latitude, double longitude) {
+    public void getData(NetworkRequestAPI APIService, String locationId, double latitude, double longitude, String cityName) {
         hourlyWeatherItemList.clear();
         dailyWeatherItemList.clear();
         carouselItemList.clear();
         completedRequests.set(0); // 重置计数器
 
+        data.setLocationId(locationId);
+        data.setLatitude(latitude);
+        data.setLongitude(longitude);
+        data.setCityName(cityName);
         Call<RealTimeWeatherResponse> getNowWeatherCall = APIService.getNowWeather(API_KEY, locationId);
         getNowWeatherCall.enqueue(new Callback<RealTimeWeatherResponse>() {
 
@@ -300,7 +304,7 @@ public class weatherViewModel extends ViewModel {
                     CarouselItem item = new CarouselItem();
                     item.setItemType(CarouselItem.AIR_TYPE);
                     item.setTitle("空气" + index.getCategory());
-                    item.setDetails(index.getHealth().getAdvice().getGeneralPopulation() + index.getHealth().getAdvice().getSensitivePopulation());
+                    item.setDetails(index.getHealth().getAdvice().getGeneralPopulation());
                     synchronized (lock) {
                         carouselItemList.add(item);
                     }
@@ -396,7 +400,7 @@ public class weatherViewModel extends ViewModel {
                         data.setWarningInfoBean(warningInfoBeanList);
                         //weatherData.setValue(data);
                     }
-                    Log.d(TAG, "onResponse: 请求预警信息成功：" + data.getWarningInfoBean().toString());
+                    Log.d(TAG, "onResponse: 请求预警信息成功：" + data.getWarningInfoBean());
                 }
                 checkAllRequestsCompleted();
             }

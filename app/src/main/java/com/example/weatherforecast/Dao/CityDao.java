@@ -1,5 +1,6 @@
 package com.example.weatherforecast.Dao;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -24,16 +25,23 @@ public interface CityDao {
 
     // 更新城市（通过名称）
     @Query("UPDATE `city_room` SET city_temperature = :temperature, " +
-            "city_airQuality = :airQuality, city_weather = :weather, city_data = :data WHERE city_name = :name")
-    int updateCity(String name, String temperature, String airQuality, String weather, Data data);
+            "city_airQuality = :airQuality, city_weather = :weather, city_data = :data, city_location_id = :LocationId WHERE city_name = :name")
+    int updateCity(String name, String temperature, String airQuality, String weather, Data data, String LocationId);
 
     // 查询所有城市
     @Query("SELECT * FROM `city_room`")
     List<City> getAllCity();
 
+    // 查询所有城市
+    @Query("SELECT * FROM `city_room`")
+    LiveData<List<City>> getAllCityLiveData();
+
     // 查询特定城市（通过名称）
-    @Query("SELECT * FROM `city_room` WHERE city_name = :name")
-    List<City> getCityByName(String name);
+    @Query("SELECT * FROM `city_room` WHERE city_name LIKE :name")
+    City getCityByName(String name);
+    // 查询特定城市（通过名称）
+    @Query("SELECT * FROM `city_room` WHERE city_name LIKE :name")
+    LiveData<City> getCityLiveDataByName(String name);
 
     // 删除城市（通过对象）
     @Delete

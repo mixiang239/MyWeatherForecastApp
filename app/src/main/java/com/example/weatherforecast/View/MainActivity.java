@@ -9,7 +9,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
-import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -19,21 +19,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.room.Room;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.baidu.location.BDLocation;
-import com.example.weatherforecast.Adapter.CarouselAdapter;
 import com.example.weatherforecast.Adapter.CityWeatherPagerAdapter;
-import com.example.weatherforecast.Adapter.DailyWeatherAdapter;
-import com.example.weatherforecast.Adapter.HourlyWeatherAdapter;
 import com.example.weatherforecast.DataBase.CityDataBase;
-import com.example.weatherforecast.Fragment.AdviceCardFragment;
-import com.example.weatherforecast.Fragment.WeatherCardFragment;
+import com.example.weatherforecast.Model.weatherModel;
 import com.example.weatherforecast.R;
 import com.example.weatherforecast.ViewModel.locationViewModel;
+import com.example.weatherforecast.ViewModel.searchCityWeatherViewModel;
 import com.example.weatherforecast.ViewModel.weatherViewModel;
 import com.example.weatherforecast.Bean.*;
 import com.example.weatherforecast.databinding.ActivityMainBinding;
@@ -47,38 +44,34 @@ import java.util.concurrent.Executors;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
     private static final String TAG = "MainActivity";
     private ActivityMainBinding binding;
-    private static List<DailyWeatherItem> dailyWeatherItemList = new ArrayList<>();
-    private static List<HourlyWeatherItem> hourlyWeatherItemList = new ArrayList<>();
-
+    private static final String API_HOST = "kh487rae6k.re.qweatherapi.com";     // 实际API Host
+    private static final String API_KEY = "8dc3ea33ad3b43dcb46bcc08b0bb8337";       // 实际API Key
 
     //权限数组
     private final String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
     //请求权限意图
     private ActivityResultLauncher<String[]> requestPermissionIntent;
     private weatherViewModel weatherViewModel;
+    private searchCityWeatherViewModel searchCityWeatherViewModel;
     private locationViewModel locationVM;
-
-    private ViewPager2 viewPager;
-    private LinearLayout indicatorLayout;
-    private CarouselAdapter adapter;
-    private Handler handler = new Handler(Looper.getMainLooper());
-    private Runnable autoScrollRunnable;
-    private int currentPage = 0;
-    private static final long AUTO_SCROLL_DELAY = 4500; // 3秒轮播间隔
-    private static final int INITIAL_POSITION = 0; // 初始位置
-
-    // 定义防晒等级数组
-    private String[] sunProtection = {"无需防晒", "建议防晒", "适度防晒", "高度防晒", "避免外出"};
-    private String[] dressAdvice = {"宜穿羽绒服", "宜穿厚外套", "宜穿薄外套", "宜穿长袖", "宜穿轻便衣裤", "宜穿短袖短裤", "宜穿防晒透气衣物"};
-    private String[] travelAdvice = {"适宜旅游", "较适宜旅游", "旅游条件一般", "较不适宜旅游", "不适宜旅游"};
 
     ViewPager2 tabViewPager;
     private CityDataBase cityDataBase;
+    private List<City> cityList;
+    private LiveData<List<City>> cityListLiveData;
+    City located;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
+        // 若位置信息改变，则自动根据当前地址获取对应Id，成功获取后再获取天气数据
+        Init();
+        locate();
+        new Handler().postDelayed(() -> {
+            InitDB();
+        }, 1000); // 延迟0.5秒
+
         setContentView(binding.getRoot());
         EdgeToEdge.enable(this);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -86,35 +79,152 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        tabViewPager = binding.mainViewpager2;
+        tabViewPager.setOffscreenPageLimit(20);
 
-        // 初始化按钮，为所有按钮设置监听器
-        InitButton();
+        // 加载城市数据并设置适配器
+        //loadCities();
 
-        // 若位置信息改变，则自动根据当前地址获取对应Id，成功获取后再获取天气数据
-        locate();
+
+        // 设置ViewPager页面变化监听
+        tabViewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                // 更新标题栏显示的城市名称
+                if (position < cityList.size()) {
+                    binding.titleLocation.setText(cityList.get(position).getName());
+                }
+            }
+        });
+
+        // 检查是否有新添加的城市
+        checkForNewCity();
     }
 
+    private void loadCities() {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            cityList = getCityList(cityDataBase.cityDao().getAllCity());
+            if (cityList !=null) {
+                Log.d(TAG, "loadCities: " + cityList.toString());
+            }
+
+            runOnUiThread(() -> {
+                // 设置适配器
+                CityWeatherPagerAdapter adapter = new CityWeatherPagerAdapter(MainActivity.this, cityList);
+                tabViewPager.setAdapter(adapter);
+
+                // 设置初始城市名称
+                if (!cityList.isEmpty()) {
+                    binding.titleLocation.setText(cityList.get(0).getName());
+                }
+            });
+        });
+    }
+    private void checkForNewCity() {
+        Intent intent = getIntent();
+        if (intent != null && intent.getBooleanExtra("city_added", false)) {
+            String cityName = intent.getStringExtra("city_name");
+            if (cityName != null) {
+                // 使用一个后台线程处理所有操作
+                // 延迟执行，确保新城市已成功添加
+                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        ExecutorService executor = Executors.newSingleThreadExecutor();
+                        executor.execute(() -> {
+
+                            // 在后台线程查询数据库，获取最新城市列表
+                            List<City> updatedCityList = getCityList(cityDataBase.cityDao().getAllCity());
+
+                            Log.d(TAG, "run: 更新后的城市列表：" + updatedCityList.toString());
+
+                            // 在UI线程更新列表和适配器
+                            runOnUiThread(() -> {
+                                // 更新成员变量 cityList
+                                //cityList.clear();
+                                //cityList.addAll(updatedCityList);
+                                //getCityList(updatedCityList);
+//                                // 设置或更新适配器（避免每次都创建新适配器）
+//                                CityWeatherPagerAdapter adapter = (CityWeatherPagerAdapter) tabViewPager.getAdapter();
+//                                if (adapter == null) {
+//                                    adapter = new CityWeatherPagerAdapter(MainActivity.this, cityList);
+//                                    tabViewPager.setAdapter(adapter);
+//                                } else {
+//                                    adapter.notifyDataSetChanged(); // 只更新数据，不重置适配器
+//                                }
+                                cityList = updatedCityList;
+                                CityWeatherPagerAdapter adapter = new CityWeatherPagerAdapter(MainActivity.this, cityList);
+                                tabViewPager.setAdapter(adapter);
+
+                                // 在同一个UI线程块中切换到新城市
+                                switchToCity(cityName);
+                            });
+                        });
+                    }
+                }, 800); // 1秒延迟
+
+                // 清除intent中的额外数据，避免重复处理
+
+                intent.removeExtra("city_added");
+                intent.removeExtra("city_name");
+            }
+        }
+    }
+
+    // 修改switchToCity，直接在UI线程操作（因为cityList已更新）
+    private void switchToCity(String cityName) {
+        for (int i = 0; i < cityList.size(); i++) {
+            if (cityList.get(i).getName().equals(cityName)) {
+                tabViewPager.setCurrentItem(i, true);
+                break;
+            }
+        }
+        Toast.makeText(this, "更新成功！", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        checkForNewCity();
+    }
+
+    private void Init() {
+        // 初始化ViewModel
+        weatherViewModel = new ViewModelProvider(this).get(weatherViewModel.class);
+        searchCityWeatherViewModel = new ViewModelProvider(this).get(searchCityWeatherViewModel.class);
+        binding.cityManage.setOnClickListener(this);
+
+    }
     // 初始化按钮
-    private void InitButton() {
+    private void InitDB() {
         // 初始化数据库
         cityDataBase = Room.databaseBuilder(WeatherApp.getContext(), CityDataBase.class, "city-database.db")
                 .addMigrations(CityDataBase.MIGRATION_1_2)
+                .addMigrations(CityDataBase.MIGRATION_2_3)
                 .build();
+
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(new Runnable() {
 
             @Override
             public void run() {
-                List<City> cityList = cityDataBase.cityDao().getAllCity();
-                tabViewPager = binding.mainViewpager2;
+                //cityDataBase.cityDao().deleteAllCity();
+                cityList = getCityList(cityDataBase.cityDao().getAllCity());
+                if (cityList !=null) {
+                    Log.d(TAG, "loadCities: " + cityList.toString());
+                }
+                //tabViewPager = binding.mainViewpager2;
                 CityWeatherPagerAdapter adapter = new CityWeatherPagerAdapter(MainActivity.this, cityList);
                 runOnUiThread(() -> {
                     tabViewPager.setAdapter(adapter);
                 });
             }
         });
-        binding.cityManage.setOnClickListener(this);
+
     }
 
 
@@ -123,6 +233,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         if (v.getId() == R.id.city_manage) {
             Intent intent = new Intent(MainActivity.this, CityManage.class);
+            Bundle bundle = new Bundle();
+            // 添加定位城市信息到Bundle中
+            bundle.putSerializable("weather_data", located);
+            intent.putExtras(bundle);
             startActivity(intent);
         }
     }
@@ -130,258 +244,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-        startAutoScroll();
+        checkForNewCity();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        stopAutoScroll();
     }
 
-    private void startAutoScroll() {
-        handler.postDelayed(autoScrollRunnable, AUTO_SCROLL_DELAY);
-    }
-
-    private void stopAutoScroll() {
-        handler.removeCallbacks(autoScrollRunnable);
-    }
-
-    private int dpToPx(int dp) {
-        float density = getResources().getDisplayMetrics().density;
-        return Math.round(dp * density);
-    }
-
-    private void startCarousel(List<CarouselItem> carouselItemList) {
-
-        // 初始化视图
-        viewPager = findViewById(R.id.viewPager);
-
-        // 设置适配器
-        adapter = new CarouselAdapter(carouselItemList);
-        viewPager.setAdapter(adapter);
-
-        // 设置初始位置（实现无限循环）
-        viewPager.setCurrentItem(INITIAL_POSITION, false);
-        currentPage = INITIAL_POSITION;
-
-        // 设置页面变化监听器
-        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-            @Override
-            public void onPageSelected(int position) {
-                super.onPageSelected(position);
-                currentPage = position;
-                //updateIndicators(position % images.size());
-            }
-        });
-
-        // 设置自动轮播
-        autoScrollRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (currentPage == adapter.getItemCount() - 1) {
-                    currentPage = INITIAL_POSITION;
-                    viewPager.setCurrentItem(currentPage, false);
-                } else {
-                    viewPager.setCurrentItem(++currentPage, true);
-                }
-                handler.postDelayed(this, AUTO_SCROLL_DELAY);
-            }
-        };
-        handler.postDelayed(autoScrollRunnable, AUTO_SCROLL_DELAY);
-    }
-//    /**
-//     * 获取数据
-//     */
-//    private void getWeatherData(String adm1, String adm2, String locationName, double latitude, double longitude) {
-//        weatherViewModel = new ViewModelProvider(this).get(weatherViewModel.class);
-//        weatherViewModel.getWeatherData().observe(this, response -> {
-//            if (response != null) {
-//                binding.temperature.setText(response.getRealTimeTem());
-//                StringBuilder temDetails = new StringBuilder();
-//                try {
-//                    temDetails.append(response.getRealTimeText())
-//                            .append(" ")
-//                            .append(response.getDailyWeatherItemList().get(0).getMinAndMaxTem())
-//                            .append(" ")
-//                            .append(response.getAirQuality().getCategory())
-//                            .append(" ")
-//                            .append(response.getAirQuality().getAqiDisplay());
-//                    //Log.d(TAG, "getWeatherData: temDetails值为：" + temDetails.toString());
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                    //Log.d(TAG, "getWeatherData: 设置实时温度时出错，错误信息：" + e.getMessage());
-//                }
-//                if (response.getDailyWeatherItemList() != null) {
-//                     // 设置实时天气数据详情
-//                    binding.temperatureDetails.setText(temDetails.toString());
-//                    // 每日天气预报
-//                    // 竖向布局管理器
-//                    LinearLayoutManager verticalLayoutManager = new LinearLayoutManager(this);
-//                    // 适配器
-//                    DailyWeatherAdapter dailyWeatherAdapter = new DailyWeatherAdapter(response.getDailyWeatherItemList());
-//                    binding.dailyRecyclerView.setLayoutManager(verticalLayoutManager);
-//                    binding.dailyRecyclerView.setAdapter(dailyWeatherAdapter);
-//                }
-//                if (response.getHourlyWeatherItemList() != null) {
-//                    // 逐小时天气预报
-//                    // 横向布局管理器
-//                    LinearLayoutManager horizontalLayoutManager = new LinearLayoutManager(
-//                            this,
-//                            LinearLayoutManager.HORIZONTAL,
-//                            false
-//                    );
-//                    // 适配器
-//                    HourlyWeatherAdapter hourlyWeatherAdapter = new HourlyWeatherAdapter(response.getHourlyWeatherItemList());
-//                    binding.hourlyRecyclerview.setLayoutManager(horizontalLayoutManager);
-//                    binding.hourlyRecyclerview.setAdapter(hourlyWeatherAdapter);
-//                }
-//                if (response.getAirQuality() != null) {
-//                    binding.airQualityDetails.setText(response.getAirQuality().getCategory() + " " + response.getAirQuality().getAqiDisplay());
-//                }
-//                try {
-//                    if (response.getSportAdvice() != null) {
-//                        binding.airQualityAdvice.setText(response.getSportAdvice());
-//                    }
-//                } catch (Exception e) {
-//                    Log.d(TAG, "getWeatherData: 设置运动指数时出错：" + e.getMessage());
-//                }
-//
-//                if (response.getCarouselItemList() != null && response.getCarouselItemList().size() != 0) {
-//                    startCarousel(response.getCarouselItemList());
-//                }
-//
-//                // 设置卡片内容
-//                if (response.getFeelsLike() != null) {
-//                    cardHandler(R.id.fragment_container2, "体感温度",
-//                            response.getFeelsLike() + "°", "", R.drawable.temperature);
-//                }
-//                if (response.getHumidity() != null) {
-//                    cardHandler(R.id.fragment_container3, "湿度",
-//                            response.getHumidity(), "%", R.drawable.humidity);
-//                }
-//                if (response.getWindDir() != null && response.getWindScale() != null) {
-//                    cardHandler(R.id.fragment_container4, response.getWindDir(),
-//                            response.getWindScale(), "级", R.drawable.wind);
-//                }
-//                if (response.getPressure() != null) {
-//                    cardHandler(R.id.fragment_container5, "气压",
-//                            response.getPressure(), "百帕", R.drawable.pressure);
-//                }
-//                if (response.getVis() != null) {
-//                    cardHandler(R.id.fragment_container6, "能见度",
-//                            response.getVis(), "千米", R.drawable.visibility);
-//                }
-//                if (response.getPrecip() != null) {
-//                    cardHandler(R.id.fragment_container1, "降水量",
-//                            response.getPrecip(), "mm", R.drawable.precipitation);
-//                }
-//
-//                // 设置生活卡片内容
-//                if (response.getLivingIndexList() != null && response.getLivingIndexList().size() != 0) {
-//                    List<Data.LivingIndexBean> lists = response.getLivingIndexList();
-//                    for (int i = 0; i < lists.size(); i++) {
-//                        switch (Integer.parseInt(lists.get(i).getType())) {
-//                            case 3: // 穿衣指数
-//                                adviceCardHandle(R.id.life_advice_fragment_container1, lists.get(i).getName(),
-//                                        Integer.parseInt(lists.get(i).getType()), dressAdvice[Integer.parseInt(lists.get(i).getLevel()) - 1],
-//                                        Integer.parseInt(lists.get(i).getLevel()), lists.get(i).getText(), R.drawable.coat);
-//                                break;
-//                            case 16: // 防晒指数
-//                                adviceCardHandle(R.id.life_advice_fragment_container2, lists.get(i).getName(),
-//                                        Integer.parseInt(lists.get(i).getType()), sunProtection[Integer.parseInt(lists.get(i).getLevel()) - 1],
-//                                        Integer.parseInt(lists.get(i).getLevel()), lists.get(i).getText(), R.drawable.umbrella);
-//                                break;
-//                            case 13: // 化妆指数
-//                                adviceCardHandle(R.id.life_advice_fragment_container3, lists.get(i).getName(),
-//                                        Integer.parseInt(lists.get(i).getType()), lists.get(i).getCategory(),
-//                                        Integer.parseInt(lists.get(i).getLevel()), lists.get(i).getText(), R.drawable.face);
-//                                break;
-//                            case 9: // 感冒指数
-//                                adviceCardHandle(R.id.life_advice_fragment_container4, lists.get(i).getName(),
-//                                        Integer.parseInt(lists.get(i).getType()), "感冒" + lists.get(i).getCategory(),
-//                                        Integer.parseInt(lists.get(i).getLevel()), lists.get(i).getText(), R.drawable.cold);
-//                                break;
-//                            case 2: // 洗车指数
-//                                adviceCardHandle(R.id.life_advice_fragment_container5, lists.get(i).getName(),
-//                                        Integer.parseInt(lists.get(i).getType()), lists.get(i).getCategory() + "洗车",
-//                                        Integer.parseInt(lists.get(i).getLevel()), lists.get(i).getText(), R.drawable.clean_car);
-//                                break;
-//                            case 1: // 运动指数
-//                                adviceCardHandle(R.id.life_advice_fragment_container6, lists.get(i).getName(),
-//                                        Integer.parseInt(lists.get(i).getType()), lists.get(i).getCategory() + "户外运动",
-//                                        Integer.parseInt(lists.get(i).getLevel()), lists.get(i).getText(), R.drawable.sport);
-//                                break;
-//                            case 15: // 交通指数
-//                                adviceCardHandle(R.id.life_advice_fragment_container7, lists.get(i).getName(),
-//                                        Integer.parseInt(lists.get(i).getType()), "交通" + lists.get(i).getCategory(),
-//                                        Integer.parseInt(lists.get(i).getLevel()), lists.get(i).getText(), R.drawable.car_margin);
-//                                break;
-//                            case 6: // 旅游指数
-//                                adviceCardHandle(R.id.life_advice_fragment_container8, lists.get(i).getName(),
-//                                        Integer.parseInt(lists.get(i).getType()), travelAdvice[Integer.parseInt(lists.get(i).getLevel()) - 1],
-//                                        Integer.parseInt(lists.get(i).getLevel()), lists.get(i).getText(), R.drawable.travel);
-//                                break;
-//                            case 4: // 钓鱼指数
-//                                adviceCardHandle(R.id.life_advice_fragment_container9, lists.get(i).getName(),
-//                                        Integer.parseInt(lists.get(i).getType()), lists.get(i).getCategory() + "钓鱼",
-//                                        Integer.parseInt(lists.get(i).getLevel()), lists.get(i).getText(), R.drawable.fishing);
-//                                break;
-//                            default:
-//
-//                        }
-//                    }
-//                }
-//                Log.d(TAG, "getWeatherData: 获取天气数据成功！");
-//            } else {
-//                Log.d(TAG, "getWeatherData: 获取天气数据失败！");
-//            }
-//        });
-//        // 发起请求（先获取当前城市对应Id，成功获取Id后再发起请求获取天气数据）
-//        weatherViewModel.searchCity(adm1,adm2,locationName, latitude, longitude);
-//    }
-//    private void adviceCardHandle (int containerId, String name, int type, String category, int level, String text, int iconId) {
-//        AdviceCardFragment fragment = (AdviceCardFragment) getSupportFragmentManager()
-//                .findFragmentById(containerId);
-//
-//        if (fragment == null) {
-//            // 创建新的Fragment
-//            fragment = AdviceCardFragment.newInstance(category,iconId);
-//            getSupportFragmentManager().beginTransaction()
-//                    .replace(containerId, fragment)
-//                    .commit();
-//        } else {
-//            // 更新已有的Fragment
-//            fragment.updateContent(category, iconId);
-//        }
-//    }
-//    private void cardHandler(int containerId, String name, String value, String desc, int iconId) {
-//        // 创建或获取Fragment实例
-//        WeatherCardFragment fragment = (WeatherCardFragment) getSupportFragmentManager()
-//                .findFragmentById(containerId);
-//
-//        if (fragment == null) {
-//            // 创建新的Fragment
-//            fragment = WeatherCardFragment.newInstance(
-//                    name,
-//                    value,
-//                    desc,
-//                    iconId
-//            );
-//            getSupportFragmentManager().beginTransaction()
-//                    .replace(containerId, fragment)
-//                    .commit();
-//        } else {
-//            // 更新现有的Fragment
-//            fragment.updateContent(
-//                    name,
-//                    value,
-//                    desc,
-//                    iconId
-//            );
-//        }
-//    }
-    // 定位
     @SuppressLint("NewApi")
     private void locate() {
         locationVM = new ViewModelProvider(this).get(locationViewModel.class);
@@ -435,11 +305,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //        });
         Log.d(TAG, "onReceiveLocation: 定位结果: " + bdLocation.toString());
         // 设置标题栏区县信息
-        binding.titleLocation.setText(district);
+        //binding.titleLocation.setText(district);
         // 拿到地址信息后获取天气数据
         //getWeatherData(province,city,district, latitude, longitude);
-    }
+        weatherModel.NetworkRequestAPI searchCity = weatherModel.RetrofitClient.getClient("https://" + API_HOST)
+                .create(weatherModel.NetworkRequestAPI.class);
 
+        weatherViewModel.searchCity(province, city, district, latitude, longitude);
+        weatherViewModel.getWeatherData().observe(this, locatedData -> {
+            located = new City(district, locatedData.getRealTimeTem(),
+                    "空气" + locatedData.getAirQuality().getCategory() + locatedData.getAirQuality().getAqiDisplay(),
+                    locatedData.getRealTimeText(), locatedData);
+            if (located != null) {
+                Log.d(TAG, "onBDLocation: " + located.toString());
+            }
+        });
+    }
+    private List<City> getCityList(List<City> dbCityList) {
+        List<City> returnCityList = new ArrayList<>();
+        if (located != null) {
+            returnCityList.add(located);
+        }
+        returnCityList.addAll(dbCityList);
+        return returnCityList;
+    }
     /**
      * 创建请求权限意图
      */

@@ -9,6 +9,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.weatherforecast.Bean.DailyWeatherItem;
 import com.example.weatherforecast.R;
 import com.example.weatherforecast.Bean.HourlyWeatherItem;
 
@@ -35,6 +36,17 @@ public class HourlyWeatherAdapter extends RecyclerView.Adapter<HourlyWeatherAdap
         holder.TimeText.setText(currentWea.getTime());
         holder.WeatherIcon.setImageResource(currentWea.getImageId());
         holder.TemText.setText(currentWea.getTem());
+    }
+
+    public void updateData(List<HourlyWeatherItem> data) {
+        this.hourlyWeatherItemList.clear();
+        this.hourlyWeatherItemList.addAll(data);
+        notifyDataSetChanged();
+
+        // 或者更好的方式：使用DiffUtil进行高效更新
+        // DiffUtil.DiffResult result = DiffUtil.calculateDiff(new MyDiffCallback(this.dataList, newData));
+        // this.dataList = newData;
+        // result.dispatchUpdatesTo(this);
     }
 
     @Override
