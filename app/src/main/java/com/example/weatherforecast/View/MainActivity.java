@@ -14,12 +14,14 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.LongDef;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.room.Room;
 import androidx.viewpager2.widget.ViewPager2;
@@ -27,6 +29,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.baidu.location.BDLocation;
 import com.example.weatherforecast.Adapter.CityWeatherPagerAdapter;
 import com.example.weatherforecast.DataBase.CityDataBase;
+import com.example.weatherforecast.DataBase.LocatedCityDatabase;
 import com.example.weatherforecast.Model.weatherModel;
 import com.example.weatherforecast.R;
 import com.example.weatherforecast.ViewModel.locationViewModel;
@@ -57,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     ViewPager2 tabViewPager;
     private CityDataBase cityDataBase;
+    private LocatedCityDatabase locatedCityDatabase;
     private List<City> cityList;
     private LiveData<List<City>> cityListLiveData;
     City located;
@@ -65,12 +69,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
-        // 若位置信息改变，则自动根据当前地址获取对应Id，成功获取后再获取天气数据
+
         Init();
+        // 若位置信息改变，则自动根据当前地址获取对应Id，成功获取后再获取天气数据
         locate();
-        new Handler().postDelayed(() -> {
-            InitDB();
-        }, 1000); // 延迟0.5秒
+        InitDB();
+//        new Handler().postDelayed(() -> {
+//
+//        }, 1500); // 延迟1.5秒
 
         setContentView(binding.getRoot());
         EdgeToEdge.enable(this);
@@ -101,27 +107,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // 检查是否有新添加的城市
         checkForNewCity();
     }
-
-    private void loadCities() {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            cityList = getCityList(cityDataBase.cityDao().getAllCity());
-            if (cityList !=null) {
-                Log.d(TAG, "loadCities: " + cityList.toString());
-            }
-
-            runOnUiThread(() -> {
-                // 设置适配器
-                CityWeatherPagerAdapter adapter = new CityWeatherPagerAdapter(MainActivity.this, cityList);
-                tabViewPager.setAdapter(adapter);
-
-                // 设置初始城市名称
-                if (!cityList.isEmpty()) {
-                    binding.titleLocation.setText(cityList.get(0).getName());
-                }
-            });
-        });
-    }
     private void checkForNewCity() {
         Intent intent = getIntent();
         if (intent != null && intent.getBooleanExtra("city_added", false)) {
@@ -132,44 +117,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        ExecutorService executor = Executors.newSingleThreadExecutor();
-                        executor.execute(() -> {
+//                        ExecutorService executor = Executors.newSingleThreadExecutor();
+//                        executor.execute(() -> {
+//
+//                            // 在后台线程查询数据库，获取最新城市列表
+//                            List<City> updatedCityList = cityDataBase.cityDao().getAllCity();
+//
+//                            Log.d(TAG, "run: 更新后的城市列表：" + updatedCityList.toString());
+//
+//                            // 在UI线程更新列表和适配器
+//                            runOnUiThread(() -> {
+//                                cityList = getCityList(updatedCityList);
+//                                CityWeatherPagerAdapter adapter = new CityWeatherPagerAdapter(MainActivity.this, cityList);
+//                                tabViewPager.setAdapter(adapter);
+//
+//                                // 在同一个UI线程块中切换到新城市
+//                                switchToCity(cityName);
+//                            });
+//                        });
+                        safeSwitchCity(cityName);
 
-                            // 在后台线程查询数据库，获取最新城市列表
-                            List<City> updatedCityList = getCityList(cityDataBase.cityDao().getAllCity());
-
-                            Log.d(TAG, "run: 更新后的城市列表：" + updatedCityList.toString());
-
-                            // 在UI线程更新列表和适配器
-                            runOnUiThread(() -> {
-                                // 更新成员变量 cityList
-                                //cityList.clear();
-                                //cityList.addAll(updatedCityList);
-                                //getCityList(updatedCityList);
-//                                // 设置或更新适配器（避免每次都创建新适配器）
-//                                CityWeatherPagerAdapter adapter = (CityWeatherPagerAdapter) tabViewPager.getAdapter();
-//                                if (adapter == null) {
-//                                    adapter = new CityWeatherPagerAdapter(MainActivity.this, cityList);
-//                                    tabViewPager.setAdapter(adapter);
-//                                } else {
-//                                    adapter.notifyDataSetChanged(); // 只更新数据，不重置适配器
-//                                }
-                                cityList = updatedCityList;
-                                CityWeatherPagerAdapter adapter = new CityWeatherPagerAdapter(MainActivity.this, cityList);
-                                tabViewPager.setAdapter(adapter);
-
-                                // 在同一个UI线程块中切换到新城市
-                                switchToCity(cityName);
-                            });
-                        });
                     }
-                }, 800); // 1秒延迟
+                }, 800); // 0.8秒延迟
 
                 // 清除intent中的额外数据，避免重复处理
 
                 intent.removeExtra("city_added");
                 intent.removeExtra("city_name");
             }
+        } else {
+            //safeMergeCities();
         }
     }
 
@@ -184,6 +161,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Toast.makeText(this, "更新成功！", Toast.LENGTH_SHORT).show();
     }
 
+    private void cityManageSwitchToCity() {
+        Intent intent = getIntent();
+        if (intent != null && intent.getStringExtra("city_name_true") != null) {
+            String cityName = intent.getStringExtra("city_name_true");
+            switchToCity(cityName);
+        }
+    }
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
@@ -196,35 +180,135 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         weatherViewModel = new ViewModelProvider(this).get(weatherViewModel.class);
         searchCityWeatherViewModel = new ViewModelProvider(this).get(searchCityWeatherViewModel.class);
         binding.cityManage.setOnClickListener(this);
-
     }
     // 初始化按钮
     private void InitDB() {
+        tabViewPager = binding.mainViewpager2;
         // 初始化数据库
         cityDataBase = Room.databaseBuilder(WeatherApp.getContext(), CityDataBase.class, "city-database.db")
                 .addMigrations(CityDataBase.MIGRATION_1_2)
                 .addMigrations(CityDataBase.MIGRATION_2_3)
                 .build();
 
+        locatedCityDatabase = Room.databaseBuilder(WeatherApp.getContext(), LocatedCityDatabase.class, "located-database.db")
+                .addMigrations(CityDataBase.MIGRATION_1_2)
+                .build();
 
+        weatherModel.NetworkRequestAPI searchCity = weatherModel.RetrofitClient.getClient("https://" + API_HOST)
+                .create(weatherModel.NetworkRequestAPI.class);
+
+        safeMergeCities();
+    }
+    private void safeSwitchCity(String cityName) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(new Runnable() {
+        executor.execute(() -> {
+            try {
+                // 在后台线程查询两个数据库
+                List<LocatedCity> locatedCities = locatedCityDatabase.locatedCityDao().getAllCity();
+                List<City> normalCities = cityDataBase.cityDao().getAllCity();
 
-            @Override
-            public void run() {
-                //cityDataBase.cityDao().deleteAllCity();
-                cityList = getCityList(cityDataBase.cityDao().getAllCity());
-                if (cityList !=null) {
-                    Log.d(TAG, "loadCities: " + cityList.toString());
+                List<City> mergedList = new ArrayList<>();
+
+                // 添加定位城市（如果有）
+                if (locatedCities != null && !locatedCities.isEmpty()) {
+                    LocatedCity locatedCity = locatedCities.get(0);
+                    City city = new City(locatedCity.getName(), locatedCity.getTemperature(),
+                            locatedCity.getAirQuality(), locatedCity.getWeather(), locatedCity.getData());
+                    mergedList.add(city);
                 }
-                //tabViewPager = binding.mainViewpager2;
-                CityWeatherPagerAdapter adapter = new CityWeatherPagerAdapter(MainActivity.this, cityList);
+
+                // 添加普通城市
+                if (normalCities != null) {
+                    mergedList.addAll(normalCities);
+                }
+
+                // 在主线程更新UI
                 runOnUiThread(() -> {
-                    tabViewPager.setAdapter(adapter);
+                    cityList = mergedList;
+                    CityWeatherPagerAdapter adapter = new CityWeatherPagerAdapter(MainActivity.this, mergedList);
+                    binding.mainViewpager2.setAdapter(adapter);
+
+                    switchToCity(cityName);
                 });
+
+            } catch (Exception e) {
+                Log.e(TAG, "合并城市数据失败", e);
+                runOnUiThread(() ->
+                        Toast.makeText(MainActivity.this, "数据加载失败", Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+    private void safeMergeCities() {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            try {
+                // 在后台线程查询两个数据库
+                List<LocatedCity> locatedCities = locatedCityDatabase.locatedCityDao().getAllCity();
+                List<City> normalCities = cityDataBase.cityDao().getAllCity();
+
+                List<City> mergedList = new ArrayList<>();
+
+                // 添加定位城市（如果有）
+                if (locatedCities != null && !locatedCities.isEmpty()) {
+                    LocatedCity locatedCity = locatedCities.get(0);
+                    City city = new City(locatedCity.getName(), locatedCity.getTemperature(),
+                            locatedCity.getAirQuality(), locatedCity.getWeather(), locatedCity.getData());
+                    mergedList.add(city);
+                }
+
+                // 添加普通城市
+                if (normalCities != null) {
+                    mergedList.addAll(normalCities);
+                }
+
+                // 在主线程更新UI
+                runOnUiThread(() -> {
+                    cityList = mergedList;
+                    CityWeatherPagerAdapter adapter = new CityWeatherPagerAdapter(MainActivity.this, mergedList);
+                    binding.mainViewpager2.setAdapter(adapter);
+
+                    if (!mergedList.isEmpty()) {
+                        binding.titleLocation.setText(mergedList.get(0).getName());
+                    }
+                });
+
+            } catch (Exception e) {
+                Log.e(TAG, "合并城市数据失败", e);
+                runOnUiThread(() ->
+                        Toast.makeText(MainActivity.this, "数据加载失败", Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    private List<City> getCityList(List<City> dbCityList) {
+        List<City> returnCityList = new ArrayList<>();
+        locatedCityDatabase.locatedCityDao().getAllCityLiveData().observe(this, new Observer<List<LocatedCity>>() {
+            @Override
+            public void onChanged(List<LocatedCity> locatedCities) {
+                LocatedCity myCity = null;
+                // 移除之前的观察者，避免重复调用
+                locatedCityDatabase.locatedCityDao().getAllCityLiveData().removeObserver(this);
+
+                if (locatedCities != null && locatedCities.size() != 0) {
+                    myCity = locatedCities.get(0);
+                }
+
+                if (myCity != null) {
+                    City returnMyCity = new City(myCity.getName(), myCity.getTemperature(), myCity.getAirQuality(), myCity.getWeather(), myCity.getData());
+                    returnCityList.add(returnMyCity);
+                }
             }
         });
 
+//        if (located != null) {
+//            returnCityList.add(located);
+//        } else {
+//            runOnUiThread(() -> {
+//                Toast.makeText(this, "定位失败！显示已添加的城市", Toast.LENGTH_SHORT).show();
+//            });
+//        }
+        returnCityList.addAll(dbCityList);
+        return returnCityList;
     }
 
 
@@ -245,6 +329,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onResume() {
         super.onResume();
         checkForNewCity();
+        cityManageSwitchToCity();
     }
 
     @Override
@@ -308,26 +393,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //binding.titleLocation.setText(district);
         // 拿到地址信息后获取天气数据
         //getWeatherData(province,city,district, latitude, longitude);
-        weatherModel.NetworkRequestAPI searchCity = weatherModel.RetrofitClient.getClient("https://" + API_HOST)
-                .create(weatherModel.NetworkRequestAPI.class);
 
         weatherViewModel.searchCity(province, city, district, latitude, longitude);
         weatherViewModel.getWeatherData().observe(this, locatedData -> {
             located = new City(district, locatedData.getRealTimeTem(),
                     "空气" + locatedData.getAirQuality().getCategory() + locatedData.getAirQuality().getAqiDisplay(),
                     locatedData.getRealTimeText(), locatedData);
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    if (locatedCityDatabase.locatedCityDao().updateCity(located.getTemperature(), located.getAirQuality(),
+                            located.getWeather(), located.getData(), located.getLocationId()) == 0) {
+                        LocatedCity myCity = new LocatedCity(located.getName(), located.getTemperature(), located.getAirQuality(), located.getWeather(), located.getData(), located.getLocationId());
+                        locatedCityDatabase.locatedCityDao().insertCity(myCity);
+                        List<LocatedCity> cities = locatedCityDatabase.locatedCityDao().getAllCity();
+                        Log.d(TAG, "定位城市:" + cities.toString());
+                    }
+                }
+            });
             if (located != null) {
-                Log.d(TAG, "onBDLocation: " + located.toString());
+                //Log.d(TAG, "当前城市天气请求结果： " + located.toString());
             }
         });
-    }
-    private List<City> getCityList(List<City> dbCityList) {
-        List<City> returnCityList = new ArrayList<>();
-        if (located != null) {
-            returnCityList.add(located);
-        }
-        returnCityList.addAll(dbCityList);
-        return returnCityList;
     }
     /**
      * 创建请求权限意图

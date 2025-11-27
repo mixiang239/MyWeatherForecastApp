@@ -19,12 +19,21 @@ import java.util.List;
 public class CarouselAdapter extends RecyclerView.Adapter<CarouselAdapter.ViewHolder> {
     private List<CarouselItem> carouselItemList;
     private static final String TAG = "CarouselAdapter";
+    private OnItemClickListener onItemClickListener;
 
     public CarouselAdapter(List<CarouselItem> carouselItemList) {
         this.carouselItemList = carouselItemList;
     }
 
+    // 定义点击事件接口
+    public interface OnItemClickListener {
+        void onItemClick(int position, CarouselItem item);
+    }
 
+    // 设置点击监听器的方法
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.onItemClickListener = listener;
+    }
 
     @NonNull
     @Override
@@ -69,9 +78,24 @@ public class CarouselAdapter extends RecyclerView.Adapter<CarouselAdapter.ViewHo
                     break;
                 default:
             }
+
+            // 添加点击事件处理
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (onItemClickListener != null) {
+                        // 使用实际位置而不是无限循环的位置
+                        int actualPos = holder.getAdapterPosition() % carouselItemList.size();
+                        if (actualPos >= 0 && actualPos < carouselItemList.size()) {
+                            onItemClickListener.onItemClick(actualPos, carouselItemList.get(actualPos));
+                        }
+                    }
+                }
+            });
         } catch (Exception e) {
             Log.d(TAG, "onBindViewHolder: " + e.getMessage());
         }
+
 
     }
 

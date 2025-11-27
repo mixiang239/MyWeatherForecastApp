@@ -36,6 +36,7 @@ import com.example.weatherforecast.ViewModel.weatherViewModel;
 import com.example.weatherforecast.databinding.AdviceCardFragmentBinding;
 import com.example.weatherforecast.databinding.CityWeatherFragmentBinding;
 import com.example.weatherforecast.location.WeatherApp;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -90,6 +91,7 @@ public class CityWeatherFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = CityWeatherFragmentBinding.inflate(inflater, container, false);
+        //refreshWeatherData();
         return binding.getRoot();
     }
     @Override
@@ -114,12 +116,16 @@ public class CityWeatherFragment extends Fragment {
                 .addMigrations(CityDataBase.MIGRATION_2_3)
                 .build();
 
+        refreshWeatherData();
+
         // 设置刷新监听器
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
                 // 执行刷新操作
                 refreshWeatherData();
+                // 显示刷新完成提示
+                Toast.makeText(getContext(), "更新成功！", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -166,10 +172,9 @@ public class CityWeatherFragment extends Fragment {
         Log.d(TAG, "refreshWeatherData: LocationId:" + mdata.getCityName() + " " + mdata.getLocationId() + " " + mdata.getLatitude() + " " + mdata.getLongitude());
         //searchCityWeatherViewModel.getData(searchCity, mdata.getLocationId(), mdata.getLatitude(), mdata.getLongitude(), mdata.getCityName());
         weatherViewModel.getData(searchCity, mdata.getLocationId(), mdata.getLatitude(), mdata.getLongitude(), mdata.getCityName());
-        weatherViewModel.getWeatherData().observe(this, newWeatherData -> {
+        weatherViewModel.getWeatherData().observe(getViewLifecycleOwner(), newWeatherData -> {
             updateContent(newWeatherData);
-            // 显示刷新完成提示
-            Toast.makeText(getContext(), "更新成功！", Toast.LENGTH_SHORT).show();
+
         });
         cityName = mdata.getCityName();
         // 模拟网络请求延迟
@@ -422,6 +427,11 @@ public class CityWeatherFragment extends Fragment {
     }
     private void startCarousel(List<CarouselItem> carouselItemList) {
 
+        // 检查 Fragment 是否附加到 Activity
+        if (getActivity() == null || getActivity().isFinishing() || !isAdded()) {
+            return;
+        }
+
         // 停止之前的轮播
         stopAutoScroll();
 
@@ -450,6 +460,26 @@ public class CityWeatherFragment extends Fragment {
             adapter.updateData(carouselItemList);
         }
 
+        adapter.setOnItemClickListener(new CarouselAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(int position, CarouselItem item) {
+                // 创建底部弹窗
+                // 使用 Activity 的 Context 而不是 Application Context
+                BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(getActivity());
+
+                // 加载布局
+                View bottomSheetView = LayoutInflater.from(getActivity())
+                        .inflate(R.layout.bottom_sheet_layout, null);
+                bottomSheetDialog.setContentView(bottomSheetView);
+
+                // 获取布局中的控件
+                TextView title = bottomSheetView.findViewById(R.id.textView);
+                TextView details = bottomSheetView.findViewById(R.id.textView2);
+                title.setText(item.getTitle());
+                details.setText(item.getDetails());
+                bottomSheetDialog.show();
+            }
+        });
 
         // 设置自动轮播
         autoScrollRunnable = new Runnable() {

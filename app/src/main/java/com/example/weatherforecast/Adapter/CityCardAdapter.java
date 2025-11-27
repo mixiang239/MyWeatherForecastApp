@@ -16,11 +16,18 @@ import java.util.List;
 
 public class CityCardAdapter extends RecyclerView.Adapter<CityCardAdapter.ViewHolder> {
     List<CityCardItem> cityCardItemList;
-
+    private static CityListAdapter.OnItemClickListener mListener;
+    // 定义点击事件接口
+    public interface OnItemClickListener {
+        void onItemClick(int position);
+    }
     public CityCardAdapter(List<CityCardItem> cityCardItemList) {
         this.cityCardItemList = cityCardItemList;
     }
-
+    // 设置点击监听器
+    public void setOnItemClickListener(CityListAdapter.OnItemClickListener listener) {
+        mListener = listener;
+    }
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -65,6 +72,16 @@ public class CityCardAdapter extends RecyclerView.Adapter<CityCardAdapter.ViewHo
             temp = itemView.findViewById(R.id.city_item_temperature);
             airQuality = itemView.findViewById(R.id.city_item_air_quality);
             weather = itemView.findViewById(R.id.city_item_weather);
+
+            // 为 itemView 设置点击事件
+            itemView.setOnClickListener(v -> {
+                if (mListener != null) {
+                    int position = getAdapterPosition();
+                    if (position != RecyclerView.NO_POSITION) {
+                        mListener.onItemClick(position);
+                    }
+                }
+            });
         }
     }
 }
