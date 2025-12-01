@@ -47,8 +47,8 @@ import java.util.concurrent.Executors;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
     private static final String TAG = "MainActivity";
     private ActivityMainBinding binding;
-    private static final String API_HOST = "kh487rae6k.re.qweatherapi.com";     // 实际API Host
-    private static final String API_KEY = "8dc3ea33ad3b43dcb46bcc08b0bb8337";       // 实际API Key
+    private static final String API_HOST = "kh487rae6k.re.qweatherapi.com";
+    private static final String API_KEY = "8dc3ea33ad3b43dcb46bcc08b0bb8337";
 
     //权限数组
     private final String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
@@ -117,28 +117,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
                     @Override
                     public void run() {
-//                        ExecutorService executor = Executors.newSingleThreadExecutor();
-//                        executor.execute(() -> {
-//
-//                            // 在后台线程查询数据库，获取最新城市列表
-//                            List<City> updatedCityList = cityDataBase.cityDao().getAllCity();
-//
-//                            Log.d(TAG, "run: 更新后的城市列表：" + updatedCityList.toString());
-//
-//                            // 在UI线程更新列表和适配器
-//                            runOnUiThread(() -> {
-//                                cityList = getCityList(updatedCityList);
-//                                CityWeatherPagerAdapter adapter = new CityWeatherPagerAdapter(MainActivity.this, cityList);
-//                                tabViewPager.setAdapter(adapter);
-//
-//                                // 在同一个UI线程块中切换到新城市
-//                                switchToCity(cityName);
-//                            });
-//                        });
                         safeSwitchCity(cityName);
 
                     }
-                }, 800); // 0.8秒延迟
+                }, 800);
 
                 // 清除intent中的额外数据，避免重复处理
 
@@ -300,13 +282,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
-//        if (located != null) {
-//            returnCityList.add(located);
-//        } else {
-//            runOnUiThread(() -> {
-//                Toast.makeText(this, "定位失败！显示已添加的城市", Toast.LENGTH_SHORT).show();
-//            });
-//        }
         returnCityList.addAll(dbCityList);
         return returnCityList;
     }
@@ -377,22 +352,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String district = bdLocation.getDistrict();    //获取区县
         String street = bdLocation.getStreet();    //获取街道信息
         String locationDescribe = bdLocation.getLocationDescribe();    //获取位置描述信息
-        //binding.tvAddressDetail.setText(addr);//设置文本显示
-        //Log.d(TAG, "onReceiveLocation: " + city);
-//        runOnUiThread(() -> {
-//            // 检查视图绑定和控件是否可用
-//            if (binding != null && binding.tvAddressDetail != null) {
-//                // 处理可能的空地址
-//                String displayAddr = (addr != null && !addr.isEmpty()) ? addr :
-//                        "位置: 定位失败！";
-//                binding.tvAddressDetail.setText(displayAddr);
-//            }
-//        });
+
         Log.d(TAG, "onReceiveLocation: 定位结果: " + bdLocation.toString());
-        // 设置标题栏区县信息
-        //binding.titleLocation.setText(district);
-        // 拿到地址信息后获取天气数据
-        //getWeatherData(province,city,district, latitude, longitude);
 
         weatherViewModel.searchCity(province, city, district, latitude, longitude);
         weatherViewModel.getWeatherData().observe(this, locatedData -> {

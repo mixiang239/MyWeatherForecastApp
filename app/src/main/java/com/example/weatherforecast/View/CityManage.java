@@ -130,39 +130,6 @@ public class CityManage extends AppCompatActivity implements View.OnClickListene
         });
     }
 
-//    private void updateView() {
-//        ExecutorService executor = Executors.newSingleThreadExecutor();
-//        executor.execute(new Runnable() {
-//
-//            @Override
-//            public void run() {
-//                List<City> cityList = cityDataBase.cityDao().getAllCity();
-//                for (City city1 : cityList) {
-//                    Log.d(TAG, "id = " + city1.getId());
-//                    Log.d(TAG, "name = " + city1.getName());
-//                    Log.d(TAG, "tem = " + city1.getTemperature());
-//                    Log.d(TAG, "data = " + city1.getData());
-//                }
-//
-//                List<CityCardItem> cityCardItemList = new ArrayList<>();
-//
-//                for (City city : cityList) {
-//                    CityCardItem item = new CityCardItem();
-//                    item.setName(city.getName());
-//                    item.setTemp(city.getTemperature());
-//                    item.setWeather(city.getWeather());
-//                    item.setAirQuality(city.getAirQuality());
-//                    cityCardItemList.add(item);
-//                }
-//
-//                runOnUiThread(() -> {
-//                    adapter.updateData(cityCardItemList);
-//                });
-//
-//            }
-//        });
-//    }
-
     private void deleteAllCities() {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(new Runnable() {
@@ -204,10 +171,9 @@ public class CityManage extends AppCompatActivity implements View.OnClickListene
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
         builder.setTitle("删除确认")
                 .setMessage("删除后数据将永久丢失")
-                .setIcon(R.drawable.warning) // 自定义警告图标
-        //        .setBackground(ContextCompat.getDrawable(this, R.drawable.dialog_bg)) // 可选背景
+                .setIcon(R.drawable.warning)
 
-                // 删除按钮（警示色）
+                // 删除按钮
                 .setPositiveButton("删除", (dialog, which) -> deleteAllCities())
 
                 // 取消按钮
